@@ -22,5 +22,6 @@ internal class AnimationStrings
     internal static string rangedAttackTrigger = "rangedAttack";
     internal static string isOnSlope = "isOnSlope";
     internal static string onSlick = "onSlick";
+    internal static string isOnRearWall = "isOnRearWall";
 }
 
