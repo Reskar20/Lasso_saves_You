@@ -23,5 +23,6 @@ internal class AnimationStrings
     internal static string isOnSlope = "isOnSlope";
     internal static string onSlick = "onSlick";
     internal static string isOnRearWall = "isOnRearWall";
+    internal static string canWallJump = "canWallJump";
 }
 

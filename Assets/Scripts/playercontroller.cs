@@ -1,4 +1,6 @@
 using System;
+using System.Data.Common;
+using System.Runtime.CompilerServices;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,10 +14,14 @@ TO DO:
 2 run: working
 3 jump: working
 4 jump cut: working
-5 wall jump: not started
+5 wall jump: working
 6 slick: working
-7 sliding: not started
+7 sliding: working
+8 coyote time: not started
+9 gravity for slide/slick: working
 */
+
+
 
 public class playercontroller : MonoBehaviour
 {
@@ -26,12 +32,28 @@ public class playercontroller : MonoBehaviour
     public PlayerData Data;
     Rigidbody2D rb;
     Animator animator;
-  
-    
+    CapsuleCollider2D touchingCol;
+    public ContactFilter2D castFilter;
+
+    RaycastHit2D[] rearWallHits = new RaycastHit2D[5];
+    RaycastHit2D[] wallJumpHits = new RaycastHit2D[5];
+    private Vector2 colliderSize;
+    public float wallJumpDistance = 1.05f;
+    public float rearWallDistance = 01.05f;
+    private RaycastHit2D GroundTeleport2D;
+    [SerializeField] private Transform rayCastOrigin;
+    [SerializeField] private Transform playerfeet;
+    [SerializeField] private bool isOnSlope;
+    [SerializeField] private float slopeSideAngle;
+    [SerializeField] private Vector2 slopeNormalPerp;
+    [SerializeField] private float slopeDownAngle;
+    [SerializeField] private float lastSlopeAngle;
 
 
-    [SerializeField]
-    private float isJumping = 0;
+
+
+
+    [SerializeField] private float isJumping = 0;
     private Boolean doubleJumped = false;
 
     public float CurrentMoveSpeed
@@ -71,8 +93,8 @@ public class playercontroller : MonoBehaviour
         }
     }
 
-    [SerializeField]
-    private bool _isMoving = false;
+
+    [SerializeField] private bool _isMoving = false;
     public bool IsMoving
     {
         get
@@ -87,8 +109,8 @@ public class playercontroller : MonoBehaviour
         }
     }
 
-    [SerializeField]
-    private bool _isRunning = false;
+
+    [SerializeField] private bool _isRunning = false;
 
     public bool IsRunning
     {
@@ -117,6 +139,35 @@ public class playercontroller : MonoBehaviour
             _isFacingRight = value;
         }
     }
+    [SerializeField] private bool _isOnRearWall = true;
+    public bool IsOnRearWall
+    {
+        get
+        {
+            return _isOnRearWall;
+        }
+        private set
+        {
+            _isOnRearWall = value;
+            animator.SetBool(AnimationStrings.isOnRearWall, value);
+        }
+    }
+
+    [SerializeField] private bool _canWallJump = true;
+    public bool CanWallJump
+    {
+        get
+        {
+            return _canWallJump;
+        }
+        private set
+        {
+            _canWallJump = value;
+            animator.SetBool(AnimationStrings.canWallJump, value);
+        }
+    }
+
+
 
     public bool CanMove
     {
@@ -135,7 +186,6 @@ public class playercontroller : MonoBehaviour
     }
     public bool IsWallJumping { get; private set; }
     public bool IsSliding { get; private set; }
-    public float LastOnGroundTime { get; private set; }
     public float LastOnWallTime { get; private set; }
     public float LastOnWallRightTime { get; private set; }
     public float LastOnWallLeftTime { get; private set; }
@@ -147,9 +197,18 @@ public class playercontroller : MonoBehaviour
     //Wall Jump
     private float _wallJumpStartTime;
     private int _lastWallJumpDir;
-    public float LastPressedJumpTime { get; private set; }
+    private float _lastOnRearWallTime;
+    private float _lastOnFrontWallTime;
+    private float _lastOnGroundTime;
+    private int wallHitsNumRear = 0;
+    private int wallJumpHitsNum = 0;
 
-    [SerializeField] private Transform _backWallCheckPoint;
+    private Vector2 wallCheckPosMid;
+    private float wallJumpDelay = 0;
+    private float resetDelay = 0;
+
+    private Vector2 wallCheckDirection => gameObject.transform.localScale.x > 0 ? Vector2.right : Vector2.left;
+
     public void SetGravityScale(float scale)
     {
         rb.gravityScale = scale;
@@ -163,14 +222,19 @@ public class playercontroller : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        touchingCol = GetComponent<CapsuleCollider2D>();
         animator = GetComponent<Animator>();
         touchingDirections = GetComponent<TouchingDirections>();
         damageable = GetComponent<Damageable>();
-
+        castFilter.SetLayerMask(LayerMask.GetMask("Ground", "Slope", "Slick"));
+        colliderSize = touchingCol.size;
     }
 
+    #region fixed update
+    #endregion
     private void FixedUpdate()
     {
+        SlopeCheck();
         //Higher gravity if we've released the jump input or are falling
         if (IsSliding == true) //need to implement this check
         {
@@ -189,7 +253,7 @@ public class playercontroller : MonoBehaviour
             SetGravityScale(Data.gravityScale * Data.jumpCutGravityMult);
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, -Data.maxFallSpeed));
         }
-        else if ((isJumping > 0) && Mathf.Abs(rb.linearVelocity.y) < Data.jumpHangTimeThreshold)
+        else if ((isJumping > 0f) && Mathf.Abs(rb.linearVelocity.y) < Data.jumpHangTimeThreshold)
         {
             SetGravityScale(Data.gravityScale * Data.jumpHangGravityMult);
         }
@@ -210,15 +274,22 @@ public class playercontroller : MonoBehaviour
             Invoke("Death", 3);
         }
 
+        #region wallchecks
+        wallCheckPosMid = (transform.position + new Vector3(colliderSize.x * gameObject.transform.localScale.x / 2, colliderSize.y / -5));
+        wallHitsNumRear = Physics2D.Raycast(wallCheckPosMid - new Vector2(gameObject.transform.localScale.x, 0), wallCheckDirection * new Vector2(-1, 1), castFilter, rearWallHits, rearWallDistance);
+        wallJumpHitsNum = Physics2D.Raycast(wallCheckPosMid, wallCheckDirection, castFilter, wallJumpHits, wallJumpDistance);
+        IsOnRearWall = wallHitsNumRear > 0;
+        CanWallJump = wallJumpHitsNum > 0;
+        #endregion
+
         #region movement speed
-        if (damageable.IsHit == false)
+        if (damageable.IsHit == false && wallJumpDelay <= 0)
         {
             //need to add alot of stuff here
             float targetSpeed = moveInput.x * CurrentMoveSpeed;
             if (touchingDirections.IsOnSlick == true)
             {
-                targetSpeed *= Data.slickMultiplier;
-                Debug.Log("slick TIme");
+                targetSpeed *= Data.slickSpeedMultiplier;
             }
             //We can reduce are control using Lerp() this smooths changes to are direction and speed
             targetSpeed = Mathf.Lerp(rb.linearVelocity.x, targetSpeed, 1);
@@ -228,7 +299,7 @@ public class playercontroller : MonoBehaviour
             float accelRate;
             if (touchingDirections.IsOnSlick == true)
             {
-                accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? Data.runAccelAmount * Data.accelOnSlick : Data.runDeccelAmount * Data.deccelOnSlick; 
+                accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? Data.runAccelAmount * Data.accelOnSlick : Data.runDeccelAmount * Data.deccelOnSlick;
             }
             else if (touchingDirections.IsGrounded == true)
             {
@@ -238,20 +309,21 @@ public class playercontroller : MonoBehaviour
             {
                 accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? Data.runAccelAmount * Data.accelInAir : Data.runDeccelAmount * Data.deccelInAir;
             }
-            if(Data.doConserveMomentum == true && Mathf.Abs(rb.linearVelocity.x) > Mathf.Abs(targetSpeed) && Mathf.Sign(rb.linearVelocity.x) == Mathf.Sign(targetSpeed) && Mathf.Abs(targetSpeed) > 0.01f && LastOnGroundTime < 0)
+            if (Data.doConserveMomentum == true && Mathf.Abs(rb.linearVelocity.x) > Mathf.Abs(targetSpeed) && Mathf.Sign(rb.linearVelocity.x) == Mathf.Sign(targetSpeed) && Mathf.Abs(targetSpeed) > 0.01f && _lastOnGroundTime < 0)
             {
                 //Prevent any deceleration from happening, or in other words conserve are current momentum
                 //You could experiment with allowing for the player to slightly increae their speed whilst in this "state"
-                accelRate = 0; 
+                accelRate = 0;
             }
             float speedDif = targetSpeed - rb.linearVelocityX;
 
             float movement = speedDif * accelRate;
 
 
-            if (touchingDirections.IsOnSlope == true && isJumping <= 0 && touchingDirections.IsGrounded == false)
+            if (isOnSlope == true && isJumping <= 0)
             {
-                rb.AddForce(new Vector2(movement, -3), ForceMode2D.Force); //rb.linearVelocity = new Vector2(moveInput.x * CurrentMoveSpeed, rb.linearVelocityY - 3);
+                Debug.Log("downforce");
+                rb.AddForce(new Vector2(movement, rb.linearVelocityX * slopeNormalPerp.y * -wallCheckDirection.x));
             }
             else
             {
@@ -261,9 +333,11 @@ public class playercontroller : MonoBehaviour
         animator.SetFloat(AnimationStrings.yVelocity, rb.linearVelocity.y);
         #endregion
     }
+    #region update
 
     private void Update()
     {
+
         if (isJumping > 0)
         {
             isJumping -= Time.deltaTime;
@@ -272,13 +346,27 @@ public class playercontroller : MonoBehaviour
         {
             doubleJumped = false;
         }
-        //        LastOnGroundTime -= Time.deltaTime;
-        //        LastOnWallTime -= Time.deltaTime;
-        //        LastOnWallRightTime -= Time.deltaTime;
-        //        LastOnWallLeftTime -= Time.deltaTime;
-        //        LastPressedJumpTime -= Time.deltaTime;
+        if (touchingDirections.IsGrounded == true)
+        {
+            _lastOnGroundTime = Data.coyoteTime;
+        }
+        if (CanWallJump == true)
+        {
+            _lastOnFrontWallTime = Data.coyoteTime;
+        }
+        if (IsOnRearWall == true)
+        {
+            _lastOnRearWallTime = Data.coyoteTime;
+        }
+
+        _lastOnGroundTime -= Time.deltaTime;
+        _lastOnFrontWallTime -= Time.deltaTime;
+        _lastOnRearWallTime -= Time.deltaTime;
+        wallJumpDelay -= Time.deltaTime;
+        resetDelay -= Time.deltaTime;
 
     }
+    #endregion
     public void OnMove(InputAction.CallbackContext context)
     {
         moveInput = context.ReadValue<Vector2>();
@@ -323,7 +411,33 @@ public class playercontroller : MonoBehaviour
 
     public void OnJump(InputAction.CallbackContext context)
     {
-        if (context.started && CanMove && doubleJumped == false)
+        if (touchingDirections.IsGrounded == false && context.started && (IsOnRearWall == true || CanWallJump == true) && wallJumpDelay <= 0)
+        {
+            wallJumpDelay = .2f;
+            Vector2 force = new Vector2(Data.wallJumpForce.x, Data.wallJumpForce.y);
+            Vector2 forceDirection = gameObject.transform.localScale.x > 0 ? Vector2.left : Vector2.right;
+            if (IsOnRearWall == true)
+            {
+                force.x *= wallCheckDirection.x;
+            }
+            if (CanWallJump == true)
+            {
+                force.x *= -wallCheckDirection.x;
+                SetFacingDirection(force);
+            }
+
+            if (Mathf.Sign(rb.linearVelocityX) != Mathf.Sign(force.x))
+            {
+                force.x -= rb.linearVelocityX;
+            }
+            if (rb.linearVelocityY < 0)
+            {
+                force.y -= rb.linearVelocityY;
+            }
+            rb.AddForce(force, ForceMode2D.Impulse);
+
+        }
+        else if (context.started && CanMove && doubleJumped == false)
         {
             jumpDepressed = true;
             animator.SetTrigger(AnimationStrings.jumpTrigger);
@@ -335,10 +449,10 @@ public class playercontroller : MonoBehaviour
             else
             {
                 doubleJumped = true;
-                rb.linearVelocity = new Vector2(rb.linearVelocityX, Data.jumpHeight / 1.5f);
+                rb.linearVelocity = new Vector2(rb.linearVelocityX, Data.jumpHeight * Data.doubleJumpMultiplier);
             }
         }
-        else if (context.canceled)
+        if (context.canceled)
         {
             jumpDepressed = false;
         }
@@ -364,5 +478,69 @@ public class playercontroller : MonoBehaviour
     public void Death()
     {
         SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
+    }
+    
+    #region slope angle checks
+    void SlopeCheck()
+    {
+        Vector2 checkPos = transform.position - (Vector3)(new Vector2(0.0f, colliderSize.y / 2));
+
+        SlopeCheckHorizontal(checkPos);
+        SlopeCheckVertical(checkPos);
+    }
+
+    void SlopeCheckHorizontal(Vector2 checkPos)
+    {
+        RaycastHit2D slopeHitFront = Physics2D.Raycast(checkPos, transform.right, Data.slopeCheckDistance, castFilter.layerMask);
+        RaycastHit2D slopeHitBack = Physics2D.Raycast(checkPos, -transform.right, Data.slopeCheckDistance, castFilter.layerMask);
+
+        if (slopeHitFront)
+        {
+            isOnSlope = true;
+            animator.SetBool(AnimationStrings.isOnSlope, true);
+
+            slopeSideAngle = Vector2.Angle(slopeHitFront.normal, Vector2.up);
+
+        }
+        else if (slopeHitBack)
+        {
+            isOnSlope = true;
+            animator.SetBool(AnimationStrings.isOnSlope, true);
+
+            slopeSideAngle = Vector2.Angle(slopeHitBack.normal, Vector2.up);
+        }
+        else
+        {
+            slopeSideAngle = 0.0f;
+            isOnSlope = false;
+            animator.SetBool(AnimationStrings.isOnSlope, false);
+        }
+
+    }
+
+    void SlopeCheckVertical(Vector2 checkPos)
+    {
+        RaycastHit2D hit = Physics2D.Raycast(checkPos, Vector2.down, Data.slopeCheckDistance, castFilter.layerMask);
+
+        if (hit)
+        {
+
+            slopeNormalPerp = Vector2.Perpendicular(hit.normal).normalized;
+
+            slopeDownAngle = Vector2.Angle(hit.normal, Vector2.up);
+
+            if (slopeDownAngle != lastSlopeAngle)
+            {
+                isOnSlope = true;
+                animator.SetBool(AnimationStrings.isOnSlope, true);
+            }
+
+            lastSlopeAngle = slopeDownAngle;
+
+            Debug.DrawRay(hit.point, slopeNormalPerp, Color.blue);
+            Debug.DrawRay(hit.point, hit.normal, Color.green);
+
+        }
+        #endregion
     }
 }

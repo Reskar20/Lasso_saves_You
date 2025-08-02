@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Unity.VisualScripting.FullSerializer;
+using UnityEngine;
 
 [CreateAssetMenu(menuName = "Player Data")] //Create a new playerData object by right clicking in the Project Menu then Create/Player/Player Data and drag onto the player
 public class PlayerData : ScriptableObject
@@ -44,7 +45,8 @@ public class PlayerData : ScriptableObject
 	public float jumpHangTimeThreshold; //Speeds (close to 0) where the player will experience extra "jump hang". The player's velocity.y is closest to 0 at the jump's apex (think of the gradient of a parabola or quadratic function)
 	[Space(0.5f)]
 	public float jumpHangAccelerationMult; 
-	public float jumpHangMaxSpeedMult; 				
+	public float jumpHangMaxSpeedMult;
+	[Range(0f, 1f)] public float doubleJumpMultiplier;	
   
 	[Header("Wall Jump")]
 	public Vector2 wallJumpForce; //The actual force (this time set by us) applied to the player when wall jumping.
@@ -58,22 +60,28 @@ public class PlayerData : ScriptableObject
 	[Header("Slide")]
 	public float slideSpeed;
 	public float slideAccel;
+	public float slopeCheckDistance;
 
 	[Space(20)]
 
 	[Header("Slick")]
-	[Range(1f, 3f)] public float slickMultiplier; //how much faster we can go on slick
+	[Range(1f, 3f)] public float slickSpeedMultiplier; //how much faster we can go on slick
 	[Range(0f, 2f)] public float accelOnSlick; //Multipliers applied to acceleration rate when on slick;
 	[Range(0f, 2f)] public float deccelOnSlick; //Multipliers applied to decleration rate when on slick;
+	public float downSlopeMult = 1;
 
 	[Space(20)]
 
     [Header("Assists")]
 	[Range(0.01f, 0.5f)] public float coyoteTime; //Grace period after falling off a platform, where you can still jump
 	[Range(0.01f, 0.5f)] public float jumpInputBufferTime; //Grace period after pressing jump where a jump will be automatically performed once the requirements (eg. being grounded) are met.
-	
 
-	//Unity Callback, called when the inspector updates
+
+
+
+    //Unity Callback, called when the inspector updates
+
+
     private void OnValidate()
     {
 		//Calculate gravity strength using the formula (gravity = 2 * jumpHeight / timeToJumpApex^2) 
