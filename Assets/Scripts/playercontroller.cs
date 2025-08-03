@@ -300,6 +300,10 @@ public class playercontroller : MonoBehaviour
             {
                 accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? Data.runAccelAmount : Data.runDeccelAmount;
             }
+            else if (wallJumpDelay > 0)
+            {
+                accelRate = 0;
+            }
             else
             {
                 accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? Data.runAccelAmount * Data.accelInAir : Data.runDeccelAmount * Data.deccelInAir;
@@ -404,7 +408,7 @@ public class playercontroller : MonoBehaviour
     {
         if (touchingDirections.IsGrounded == false && context.started && (_lastOnRearWallTime > 0 || _lastOnFrontWallTime > 0) && wallJumpDelay <= 0)
         {
-            wallJumpDelay = .5f;
+            wallJumpDelay = Data.wallJumpDelay;
             Vector2 force = new Vector2(Data.wallJumpForce.x, Data.wallJumpForce.y);
             Vector2 forceDirection = gameObject.transform.localScale.x > 0 ? Vector2.left : Vector2.right;
             if (_lastOnRearWallTime > 0)
@@ -425,6 +429,7 @@ public class playercontroller : MonoBehaviour
             {
                 force.y -= rb.linearVelocityY;
             }
+            animator.SetTrigger(AnimationStrings.jumpTrigger);
             rb.AddForce(force, ForceMode2D.Impulse);
 
         }

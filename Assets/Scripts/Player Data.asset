@@ -41,6 +41,7 @@ MonoBehaviour:
   wallJumpRunLerp: 0
   wallJumpTime: 0
   doTurnOnWallJump: 0
+  wallJumpDelay: 0.5
   slideSpeed: 0
   slideAccel: 0
   slopeCheckDistance: 3
