@@ -48,5 +48,5 @@ MonoBehaviour:
   accelOnSlick: 0.133
   deccelOnSlick: 0.09
   downSlopeMult: 10
-  coyoteTime: 0.01
+  coyoteTime: 0.357
   jumpInputBufferTime: 0.01

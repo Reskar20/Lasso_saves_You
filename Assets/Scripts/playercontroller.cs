@@ -41,18 +41,13 @@ public class playercontroller : MonoBehaviour
     public float wallJumpDistance = 1.05f;
     public float rearWallDistance = 01.05f;
     private RaycastHit2D GroundTeleport2D;
-    [SerializeField] private Transform rayCastOrigin;
+//    [SerializeField] private Transform rayCastOrigin;
     [SerializeField] private Transform playerfeet;
     [SerializeField] private bool isOnSlope;
     [SerializeField] private float slopeSideAngle;
     [SerializeField] private Vector2 slopeNormalPerp;
     [SerializeField] private float slopeDownAngle;
     [SerializeField] private float lastSlopeAngle;
-
-
-
-
-
     [SerializeField] private float isJumping = 0;
     private Boolean doubleJumped = false;
 
@@ -337,11 +332,6 @@ public class playercontroller : MonoBehaviour
 
     private void Update()
     {
-
-        if (isJumping > 0)
-        {
-            isJumping -= Time.deltaTime;
-        }
         if (touchingDirections.IsGrounded == true && doubleJumped == true)
         {
             doubleJumped = false;
@@ -359,6 +349,7 @@ public class playercontroller : MonoBehaviour
             _lastOnRearWallTime = Data.coyoteTime;
         }
 
+        isJumping -= Time.deltaTime;
         _lastOnGroundTime -= Time.deltaTime;
         _lastOnFrontWallTime -= Time.deltaTime;
         _lastOnRearWallTime -= Time.deltaTime;
@@ -411,16 +402,16 @@ public class playercontroller : MonoBehaviour
 
     public void OnJump(InputAction.CallbackContext context)
     {
-        if (touchingDirections.IsGrounded == false && context.started && (IsOnRearWall == true || CanWallJump == true) && wallJumpDelay <= 0)
+        if (touchingDirections.IsGrounded == false && context.started && (_lastOnRearWallTime > 0 || _lastOnFrontWallTime > 0) && wallJumpDelay <= 0)
         {
-            wallJumpDelay = .2f;
+            wallJumpDelay = .5f;
             Vector2 force = new Vector2(Data.wallJumpForce.x, Data.wallJumpForce.y);
             Vector2 forceDirection = gameObject.transform.localScale.x > 0 ? Vector2.left : Vector2.right;
-            if (IsOnRearWall == true)
+            if (_lastOnRearWallTime > 0)
             {
                 force.x *= wallCheckDirection.x;
             }
-            if (CanWallJump == true)
+            if (_lastOnFrontWallTime > 0)
             {
                 force.x *= -wallCheckDirection.x;
                 SetFacingDirection(force);
