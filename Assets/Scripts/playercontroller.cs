@@ -28,7 +28,7 @@ public class playercontroller : MonoBehaviour
     private bool jumpDepressed;
     Vector2 moveInput;
     TouchingDirections touchingDirections;
-    Damageable damageable;
+    //Damageable damageable;
     public PlayerData Data;
     Rigidbody2D rb;
     Animator animator;
@@ -220,7 +220,7 @@ public class playercontroller : MonoBehaviour
         touchingCol = GetComponent<CapsuleCollider2D>();
         animator = GetComponent<Animator>();
         touchingDirections = GetComponent<TouchingDirections>();
-        damageable = GetComponent<Damageable>();
+    //    damageable = GetComponent<Damageable>();
         castFilter.SetLayerMask(LayerMask.GetMask("Ground", "Slope", "Slick"));
         colliderSize = touchingCol.size;
     }
@@ -264,10 +264,10 @@ public class playercontroller : MonoBehaviour
             //Default gravity if standing on a platform or moving upwards
             SetGravityScale(Data.gravityScale);
         }
-        if (damageable.IsAlive == false)
+ /*       if (damageable.IsAlive == false)
         {
             Invoke("Death", 3);
-        }
+        } */
 
         #region wallchecks
         wallCheckPosMid = (transform.position + new Vector3(colliderSize.x * gameObject.transform.localScale.x / 2, colliderSize.y / -5));
@@ -278,7 +278,7 @@ public class playercontroller : MonoBehaviour
         #endregion
 
         #region movement speed
-        if (damageable.IsHit == false && wallJumpDelay <= 0)
+        if (/*damageable.IsHit == false && */ wallJumpDelay <= 0)
         {
             //need to add alot of stuff here
             float targetSpeed = moveInput.x * CurrentMoveSpeed;
@@ -321,7 +321,6 @@ public class playercontroller : MonoBehaviour
 
             if (isOnSlope == true && isJumping <= 0)
             {
-                Debug.Log("downforce");
                 rb.AddForce(new Vector2(movement, rb.linearVelocityX * slopeNormalPerp.y * -wallCheckDirection.x));
             }
             else

@@ -4,12 +4,7 @@
 *.app
 /builds
 /Packages
-/Assets/art
-/Assets/Audio
-/Assets/background
-/Assets/Characters
 /Assets/Managers
-/Assets/Objects
 /Assets/Scenes
 /Assets/Settings
 /Assets/TextMesh Pro

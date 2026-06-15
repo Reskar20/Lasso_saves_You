@@ -12,14 +12,14 @@ public class Knight : MonoBehaviour
     public DetectionZone cliffDetectionZone;
     Animator animator;
     Damageable damageable;
+    public float waitTime = 0f;
 
     Rigidbody2D rb;
     TouchingDirections touchingDirections;
 
     public enum WalkableDirection { Right, Left };
 
-    [SerializeField]
-    private WalkableDirection _walkDirection = WalkableDirection.Right;
+    public WalkableDirection _walkDirection;
     private Vector2 walkDirectionVector = Vector2.right;
     private float _landingTime = 0f;
 
@@ -82,6 +82,14 @@ public class Knight : MonoBehaviour
         touchingDirections = GetComponent<TouchingDirections>();
         animator = GetComponent<Animator>();
         damageable = GetComponent<Damageable>();
+        if (_walkDirection == WalkableDirection.Right)
+        {
+            walkDirectionVector = Vector2.right;
+        }
+        else
+        {
+            walkDirectionVector = Vector2.left;
+        }
     }
 
     [SerializeField]
@@ -95,6 +103,7 @@ public class Knight : MonoBehaviour
         {
             AttackCooldown -= Time.deltaTime;
         }
+        waitTime -= Time.deltaTime;
        
     }
     private void FixedUpdate()
@@ -121,7 +130,7 @@ public class Knight : MonoBehaviour
             hasFlipped -= Time.deltaTime;
         }
         //used instead of the can move variable
-        if (CanMove == false) //Change as necessary depending on your substate machine/animation name
+        if (CanMove == false || waitTime > 0) //Change as necessary depending on your substate machine/animation name
         {
             rb.linearVelocity = new Vector2(Mathf.Lerp(rb.linearVelocity.x, 0, walkStopRate), rb.linearVelocity.y);
         }

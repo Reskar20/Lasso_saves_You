@@ -12,14 +12,14 @@ public class HealthBar : MonoBehaviour
 
     private void Awake()
     {
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        playerDamageable = player.GetComponent<Damageable>();        
+        GameObject You = GameObject.FindGameObjectWithTag("You");
+        playerDamageable = You.GetComponent<Damageable>();        
     }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         healthSlider.value = CalculateSliderPercentage(playerDamageable.Health, playerDamageable.MaxHealth);
-        healthBarText.text = "HP " + playerDamageable.Health + " / " + playerDamageable.MaxHealth;
+        healthBarText.text = "Sanity " + playerDamageable.Health + " / " + playerDamageable.MaxHealth;
     }
 
     private float CalculateSliderPercentage(float currentHealth, float maxHealth)
@@ -40,7 +40,7 @@ public class HealthBar : MonoBehaviour
     private void OnPlayerHealthChanged(int newHealth, int maxHealth)
     {
         healthSlider.value = CalculateSliderPercentage(newHealth, maxHealth);
-        healthBarText.text = "HP " + Mathf.Max(newHealth, 0) + " / " + maxHealth;
+        healthBarText.text = "Sanity " + Mathf.Max(newHealth, 0) + " / " + maxHealth;
     }
 
     // Update is called once per frame
