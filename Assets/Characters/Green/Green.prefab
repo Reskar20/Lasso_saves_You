@@ -198,8 +198,6 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   waypointReachedDistance: 0.1
-  whirlDetectionZone: {fileID: 0}
-  _hasTarget: 0
 --- !u!1 &4803530361042296597
 GameObject:
   m_ObjectHideFlags: 0
@@ -294,9 +292,9 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: fedcfcd845238a649a41a8de1d9cfc53, type: 3}
+  m_Resource: {fileID: 8300000, guid: 36e041fea0847a349a74bc476d780e3b, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.323
   m_Pitch: 1
   Loop: 0
   Mute: 0
