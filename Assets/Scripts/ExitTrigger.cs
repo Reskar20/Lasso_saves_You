@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ExitTrigger : MonoBehaviour
 {
@@ -14,12 +15,16 @@ public class ExitTrigger : MonoBehaviour
         {            
             played = true;
             victorySong.Play();
-            Invoke("Quit", 3);
+            Invoke("Nextlevel", 3);
             
         }
     }
-    private void Quit()
+    private void Nextlevel()
     {
-        UIManager.Quit();
+        if(SceneManager.GetActiveScene().name == "gameplay Scene")
+        {
+           SceneManager.LoadSceneAsync("train"); 
+        }
+        
     }
 }

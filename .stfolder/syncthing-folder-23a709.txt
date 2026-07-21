@@ -1,0 +1,5 @@
+# This directory is a Syncthing folder marker.
+# Do not delete.
+
+folderID: 5wjy2-ctsim
+created: 2026-07-01T00:12:39-04:00

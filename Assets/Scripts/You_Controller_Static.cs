@@ -3,7 +3,6 @@ using UnityEngine.SceneManagement;
 public class You_Controller_Static : MonoBehaviour
 {
     public float walkStopRate = 0.00f;
-     public UIManager UIManager;
     public float walkAcceleration = 31f;
     public float maxSpeed = 3f;
     [SerializeField]
@@ -52,15 +51,22 @@ public class You_Controller_Static : MonoBehaviour
         animator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
         damageable = GetComponent<Damageable>();
-        UIManager = FindObjectOfType<UIManager>();
-        spawnLocation = Random.Range(1, 3);
+        spawnLocation = Random.Range(1, 5);
         if(spawnLocation == 1)
         {
-            transform.position = new Vector3( -152.32f, -23.78f, 0 );
+            transform.position = new Vector3( -152.32f, -36.3f, 0 );
         }
         else if(spawnLocation == 2)
         {
-            transform.position = new Vector3( -119.2f, -23.78f, 0 );
+            transform.position = new Vector3( -109.2f, -36.3f, 0 );
+        }
+        else if(spawnLocation == 3)
+        {
+            transform.position = new Vector3( -83.2f, -36.3f, 0 );
+        }
+        else if(spawnLocation == 4)
+        {
+            transform.position = new Vector3( -47.2f, -36.3f, 0 );
         }
     }
 
@@ -78,12 +84,22 @@ public class You_Controller_Static : MonoBehaviour
             playeranimator = Player.GetComponent<Animator>();
             playeranimator.Play("Lasso_Swoon");
             playeranimator.SetBool(AnimationStrings.canMove, false);
-            Invoke("Death", 3);
+            Invoke("Quit", 3);
          }
     } 
 
-        private void Death()
+    private void Quit()
     {
-        SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
-    }    
+            #if (UNITY_EDITOR || DEVELOPMENT_BUILD)
+                Debug.Log(this.name + " : " + this.GetType() + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            #endif
+
+            #if (UNITY_EDITOR)
+                UnityEditor.EditorApplication.isPlaying = false;
+            #elif (UNITY_STANDALONE)
+                Application.Quit();
+            #elif (UNITY_WEBGL)
+                SceneManager.LoadScene("QuitScene");
+            #endif
+    }
 }

@@ -14,7 +14,7 @@ public class PlayGlibThrow : StateMachineBehaviour
     //OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        if(playOnEnter == true && FindObjectOfType<Projectile>() == null)
+        if(playOnEnter == true && FindFirstObjectByType<Projectile>() == null)
         {
             AudioSource.PlayClipAtPoint(soundToPlay, animator.gameObject.transform.position, volume);
         }
@@ -24,7 +24,7 @@ public class PlayGlibThrow : StateMachineBehaviour
     //OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
     override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        if (playAfterDelay == true && hasDelayedSoundPlayed == false && FindObjectOfType<Projectile>() == null)
+        if (playAfterDelay == true && hasDelayedSoundPlayed == false && FindFirstObjectByType<Projectile>() == null)
         {
             timeSinceEntered += Time.deltaTime;
             if (timeSinceEntered > playDelay)
@@ -38,7 +38,7 @@ public class PlayGlibThrow : StateMachineBehaviour
     // OnStateExit is called when a transition ends and the state machine finishes evaluating this state
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        if (playOnExit == true && FindObjectOfType<Projectile>() == null)
+        if (playOnExit == true && FindFirstObjectByType<Projectile>() == null)
         {
             AudioSource.PlayClipAtPoint(soundToPlay, animator.gameObject.transform.position, volume);
         }

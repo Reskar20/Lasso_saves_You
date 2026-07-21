@@ -50,7 +50,7 @@ public class You_Controller : MonoBehaviour
         animator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
         damageable = GetComponent<Damageable>();
-        UIManager = FindObjectOfType<UIManager>();
+        UIManager = FindFirstObjectByType<UIManager>();
     }
 
     // Update is called once per frame
