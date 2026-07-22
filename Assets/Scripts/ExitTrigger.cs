@@ -15,16 +15,13 @@ public class ExitTrigger : MonoBehaviour
         {            
             played = true;
             victorySong.Play();
-            Invoke("Nextlevel", 3);
+            Invoke("Menu", 3);
             
         }
     }
-    private void Nextlevel()
+    private void Menu()
     {
-        if(SceneManager.GetActiveScene().name == "gameplay Scene")
-        {
-           SceneManager.LoadSceneAsync("train"); 
-        }
+        SceneManager.LoadSceneAsync("menu"); 
         
     }
 }

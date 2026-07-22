@@ -84,22 +84,12 @@ public class You_Controller_Static : MonoBehaviour
             playeranimator = Player.GetComponent<Animator>();
             playeranimator.Play("Lasso_Swoon");
             playeranimator.SetBool(AnimationStrings.canMove, false);
-            Invoke("Quit", 3);
+            Invoke("Menu", 3);
          }
     } 
 
-    private void Quit()
+    private void Menu()
     {
-            #if (UNITY_EDITOR || DEVELOPMENT_BUILD)
-                Debug.Log(this.name + " : " + this.GetType() + " : " + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            #endif
-
-            #if (UNITY_EDITOR)
-                UnityEditor.EditorApplication.isPlaying = false;
-            #elif (UNITY_STANDALONE)
-                Application.Quit();
-            #elif (UNITY_WEBGL)
-                SceneManager.LoadScene("QuitScene");
-            #endif
+           SceneManager.LoadSceneAsync("menu"); 
     }
 }
